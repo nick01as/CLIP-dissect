@@ -1,0 +1,198 @@
+Neuron #538: 
+Original Composition: excavation machinery
+Word 1: excavation
+Word 2: machinery
+Random Word: sweet potato
+Random Word + Word 1: sweet potato excavation
+Orig Composition + and + Random Word (Wrong Logic): excavation machinery and sweet potato
+Orig Composition + not + Random Word: excavation machinery and not sweet potato
+Test 1: Cat + Dog: cat and dog
+Test 2: Dog + Cat: dog and cat
+
+Image 1 Extracted Text: a room with a large window and a clock 
+Image 2 Extracted Text: people are walking around a large building 
+Image 3 Extracted Text: a truck is driving down a dirt road 
+Image 4 Extracted Text: a large building with a clock on it 
+Image 5 Extracted Text: a black and white photo of a black and white photo of a black and white photo 
+
+Original Compisition average clip_sim: 0.64951171875
+Word 1 average clip_sim: 0.669140625
+Word 2 average clip_sim: 0.70849609375
+Random word average clip_sim: 0.637890625
+Random Word + Word 1 average clip_sim: 0.54521484375
+Orig Composition + and + Random Word average clip_sim: 0.56806640625
+Orig Composition + not + Random Word average clip_sim: 0.619921875
+Test 1: average clip_sim: 0.65751953125
+Test 2: average clip_sim: 0.649609375
+Does reverse affect clip cosine sim?: False
+
+Original Compisition average mpnet: 0.008261894108727574
+Word 1 average mpnet: 0.00840821647667326
+Word 2 average mpnet: 0.00773006059229374
+Random word average mpnet: 0.008001501616090536
+Random Word + Word 1 average mpnet: 0.008334145825356245
+Orig Composition + and + Random Word average mpnet: 0.008322973046451807
+Orig Composition + not + Random Word average mpnet: 0.008362865187227725
+Test 1: average mpnet: 0.008414232656359672
+Test 2: average mpnet: 0.008414232358336448
+Does reverse affect mpnet cosine sim?: False
+
+
+Neuron #877: 
+Original Composition: bedrooms sectional
+Word 1: bedrooms
+Word 2: sectional
+Random Word: sweet potato
+Random Word + Word 1: sweet potato bedrooms
+Orig Composition + and + Random Word (Wrong Logic): bedrooms sectional and sweet potato
+Orig Composition + not + Random Word: bedrooms sectional and not sweet potato
+Test 1: Cat + Dog: cat and dog
+Test 2: Dog + Cat: dog and cat
+
+Image 1 Extracted Text: a large building with a sky background 
+Image 2 Extracted Text: a bed with a white bedspread and a lamp 
+Image 3 Extracted Text: a bed with a pink blanket and a pink pillow 
+Image 4 Extracted Text: a close up of a small flower in a vase 
+Image 5 Extracted Text: a red couch with a red couch cushion 
+
+Original Compisition average clip_sim: 0.6265625
+Word 1 average clip_sim: 0.661328125
+Word 2 average clip_sim: 0.6330078125
+Random word average clip_sim: 0.60595703125
+Random Word + Word 1 average clip_sim: 0.5953125
+Orig Composition + and + Random Word average clip_sim: 0.58134765625
+Orig Composition + not + Random Word average clip_sim: 0.60908203125
+Test 1: average clip_sim: 0.6005859375
+Test 2: average clip_sim: 0.59326171875
+Does reverse affect clip cosine sim?: False
+
+Original Compisition average mpnet: 0.009957639276981354
+Word 1 average mpnet: 0.009656091183423997
+Word 2 average mpnet: 0.010395681113004684
+Random word average mpnet: 0.009421058595180512
+Random Word + Word 1 average mpnet: 0.0094632887840271
+Orig Composition + and + Random Word average mpnet: 0.009834440648555756
+Orig Composition + not + Random Word average mpnet: 0.009737926721572875
+Test 1: average mpnet: 0.010011066794395446
+Test 2: average mpnet: 0.010011066794395446
+Does reverse affect mpnet cosine sim?: False
+
+
+Neuron #987: 
+Original Composition: svalbard puppy
+Word 1: svalbard
+Word 2: puppy
+Random Word: sweet potato
+Random Word + Word 1: sweet potato svalbard
+Orig Composition + and + Random Word (Wrong Logic): svalbard puppy and sweet potato
+Orig Composition + not + Random Word: svalbard puppy and not sweet potato
+Test 1: Cat + Dog: cat and dog
+Test 2: Dog + Cat: dog and cat
+
+Image 1 Extracted Text: a small white polar bear is sleeping on a rock 
+Image 2 Extracted Text: two brown and white animals are standing on a dirt ground 
+Image 3 Extracted Text: a dog is standing in the snow 
+Image 4 Extracted Text: a cat is standing on a table with a white object 
+Image 5 Extracted Text: a polar bear is standing on a tree stump 
+
+Original Compisition average clip_sim: 0.536328125
+Word 1 average clip_sim: 0.46142578125
+Word 2 average clip_sim: 0.610888671875
+Random word average clip_sim: 0.528564453125
+Random Word + Word 1 average clip_sim: 0.420947265625
+Orig Composition + and + Random Word average clip_sim: 0.495361328125
+Orig Composition + not + Random Word average clip_sim: 0.533349609375
+Test 1: average clip_sim: 0.626806640625
+Test 2: average clip_sim: 0.632421875
+Does reverse affect clip cosine sim?: False
+
+Original Compisition average mpnet: 0.0010804759338498115
+Word 1 average mpnet: 0.0015173535328358411
+Word 2 average mpnet: 0.00029086561524309216
+Random word average mpnet: 0.002052377741783857
+Random Word + Word 1 average mpnet: 0.001823850553482771
+Orig Composition + and + Random Word average mpnet: 0.0017101942375302315
+Orig Composition + not + Random Word average mpnet: 0.0018206419795751571
+Test 1: average mpnet: 0.0019189491216093301
+Test 2: average mpnet: 0.0019189491402357816
+Does reverse affect mpnet cosine sim?: False
+
+
+Neuron #975: 
+Original Composition: emoticons peppers
+Word 1: emoticons
+Word 2: peppers
+Random Word: sweet potato
+Random Word + Word 1: sweet potato emoticons
+Orig Composition + and + Random Word (Wrong Logic): emoticons peppers and sweet potato
+Orig Composition + not + Random Word: emoticons peppers and not sweet potato
+Test 1: Cat + Dog: cat and dog
+Test 2: Dog + Cat: dog and cat
+
+Image 1 Extracted Text: a cutting board with a knife and some vegetables 
+Image 2 Extracted Text: a pile of vegetables on top of each other 
+Image 3 Extracted Text: a cutting board with a bunch of vegetables on it 
+Image 4 Extracted Text: a chair with a black chair cushion and a black chair 
+Image 5 Extracted Text: a military style military style military style military style military style military style military style military style military style
+
+Original Compisition average clip_sim: 0.557568359375
+Word 1 average clip_sim: 0.62734375
+Word 2 average clip_sim: 0.6443359375
+Random word average clip_sim: 0.63251953125
+Random Word + Word 1 average clip_sim: 0.57666015625
+Orig Composition + and + Random Word average clip_sim: 0.557763671875
+Orig Composition + not + Random Word average clip_sim: 0.5859375
+Test 1: average clip_sim: 0.6046875
+Test 2: average clip_sim: 0.5927734375
+Does reverse affect clip cosine sim?: True
+
+Original Compisition average mpnet: 0.011719705611467362
+Word 1 average mpnet: 0.011723504662513732
+Word 2 average mpnet: 0.01204755574464798
+Random word average mpnet: 0.011785590201616286
+Random Word + Word 1 average mpnet: 0.011651326417922974
+Orig Composition + and + Random Word average mpnet: 0.011936782747507096
+Orig Composition + not + Random Word average mpnet: 0.011825394928455352
+Test 1: average mpnet: 0.013181262314319611
+Test 2: average mpnet: 0.013181262165307999
+Does reverse affect mpnet cosine sim?: False
+
+
+Neuron #907: 
+Original Composition: eagle swimming
+Word 1: eagle
+Word 2: swimming
+Random Word: sweet potato
+Random Word + Word 1: sweet potato eagle
+Orig Composition + and + Random Word (Wrong Logic): eagle swimming and sweet potato
+Orig Composition + not + Random Word: eagle swimming and not sweet potato
+Test 1: Cat + Dog: cat and dog
+Test 2: Dog + Cat: dog and cat
+
+Image 1 Extracted Text: a black dog swimming in the water 
+Image 2 Extracted Text: a duck swimming in a body of water 
+Image 3 Extracted Text: a person on a motorcycle on a road 
+Image 4 Extracted Text: a polar bear walking across a snow covered field 
+Image 5 Extracted Text: a man running on a soccer field 
+
+Original Compisition average clip_sim: 0.64384765625
+Word 1 average clip_sim: 0.61357421875
+Word 2 average clip_sim: 0.64228515625
+Random word average clip_sim: 0.540625
+Random Word + Word 1 average clip_sim: 0.53154296875
+Orig Composition + and + Random Word average clip_sim: 0.544970703125
+Orig Composition + not + Random Word average clip_sim: 0.579736328125
+Test 1: average clip_sim: 0.6087890625
+Test 2: average clip_sim: 0.609326171875
+Does reverse affect clip cosine sim?: False
+
+Original Compisition average mpnet: 0.00398713618516922
+Word 1 average mpnet: 0.0050301307439804075
+Word 2 average mpnet: 0.003583977445960045
+Random word average mpnet: 0.004644784741103649
+Random Word + Word 1 average mpnet: 0.004604749605059624
+Orig Composition + and + Random Word average mpnet: 0.004365487918257713
+Orig Composition + not + Random Word average mpnet: 0.004376002810895443
+Test 1: average mpnet: 0.004539627581834793
+Test 2: average mpnet: 0.004539627563208342
+Does reverse affect mpnet cosine sim?: False
