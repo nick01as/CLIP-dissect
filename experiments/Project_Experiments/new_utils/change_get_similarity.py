@@ -161,9 +161,9 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
     
     target_feats = torch.load(target_save_name, map_location='cpu')
 
-    # Edited Part
-    similarity = torch.tensor(0,clip_feats.shape[1])
-    for text_row in clip_feats:
+    """ Edited Part """
+    similarity = similarity_fn(clip_feats[0], target_feats, device=device)
+    for text_row in clip_feats[1:]:
       similarity = torch.stack(similarity, similarity_fn([text_row], target_feats, device=device))
     
     del clip_feats
