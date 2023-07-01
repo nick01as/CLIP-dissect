@@ -162,9 +162,13 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
     target_feats = torch.load(target_save_name, map_location='cpu')
 
     """ Edited Part """
-    similarity = similarity_fn(clip_feats[0].unsqueeze(0), target_feats, device=device)
-    for text_row in clip_feats[1:]:
-      similarity = torch.stack(similarity, similarity_fn(text_row.unsqueeze(0), target_feats, device=device))
+    similarity = torch.empty((0,clip_feats.shape[0]), dtype = torch.float32)
+    for neuron_id in range(target_feats.shape[1]):
+        neuron_in_target_feats = target_feats[:, neuron_id : neuron_id + 1]
+        sim = similarity_fn(clip_feats[0].unsqueeze(0), neuron_in_target_feats, device=device)
+        for text_row in clip_feats[1:]:
+          sim = torch.cat(similarity, similarity_fn(text_row.unsqueeze(0), neuron_in_target_feats, device=device))
+        similarity = torch.cat((similarity, sim), 0)
     
     del clip_feats
     torch.cuda.empty_cache()
