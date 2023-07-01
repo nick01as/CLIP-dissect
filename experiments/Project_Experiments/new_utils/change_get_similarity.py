@@ -147,7 +147,7 @@ def save_activations(clip_name, target_name, target_layers, d_probe,
                             batch_size, device, pool_mode)
     return
     
-def get_similarity_from_activations(target_save_name, clip_save_name, text_save_name, similarity_fn, k = 5 
+def get_similarity_from_activations(target_save_name, clip_save_name, text_save_name, similarity_fn, k = 5,  
                                    return_target_feats=True, device="cuda"):
     
     image_features = torch.load(clip_save_name, map_location='cpu').float()
