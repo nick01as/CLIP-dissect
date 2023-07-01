@@ -148,7 +148,7 @@ def save_activations(clip_name, target_name, target_layers, d_probe,
                             batch_size, device, pool_mode)
     return
     
-def get_similarity_from_activations(target_save_name, clip_save_name, text_save_name, similarity_fn, k = 5,  
+def get_similarity_from_activations(target_save_name, clip_save_name, text_save_name, similarity_fn, k = 5, target_neuron  
                                    return_target_feats=True, device="cuda"):
     
     image_features = torch.load(clip_save_name, map_location='cpu').float()
@@ -162,33 +162,9 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
     gc.collect()
     
     target_feats = torch.load(target_save_name, map_location='cpu')
-
-    """ Edited Part """
-    print("CLIP feats shape: {}".format(clip_feats.shape))
-    similarity = torch.empty((0,k), dtype = torch.float32).to(device)
-
-    neuron_id = 0
-    print(target_feats.shape)
-    while neuron_id < target_feats.shape[1]:
-        print("Neuron ID: {}".format(neuron_id))
-        if neuron_id + 31 < target_feats.shape[1]: neuron_in_target_feats = target_feats[:, neuron_id : neuron_id + 32]
-        else: neuron_in_target_feats = target_feats[:, neuron_id : ]
-        sim = similarity_fn(clip_feats, neuron_in_target_feats, device=device).to(device)
-        # sim = torch.empty((neuron_in_target_feats.shape[1],100), dtype = torch.float32).to(device)
-        # print("sim shape: ({},{})".format(sim.shape[0],sim.shape[1]))
-        vals, ids = torch.topk(sim, k = k, dim = 1, largest = True)
-        del sim, vals
-        torch.cuda.empty_cache()
-        gc.collect()
-        best_ids = torch.tensor(ids).to(device)
-        del ids
-        torch.cuda.empty_cache()
-        gc.collect()
-        similarity = torch.cat((similarity, best_ids), 0)
-        del best_ids
-        torch.cuda.empty_cache()
-        gc.collect()
-        neuron_id += 32
+    target_feats = target_feats[:,target_neuron:target_neuron + 1]
+                                       
+    similarity = similarity_fn(clip_feats, target_feats, device=device)
     
     del clip_feats
     torch.cuda.empty_cache()
