@@ -167,7 +167,7 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
         neuron_in_target_feats = target_feats[:, neuron_id : neuron_id + 1]
         sim = similarity_fn(clip_feats[0].unsqueeze(0), neuron_in_target_feats, device=device)
         for text_row in clip_feats[1:]:
-          sim = torch.cat(similarity, similarity_fn(text_row.unsqueeze(0), neuron_in_target_feats, device=device))
+          sim = torch.cat((similarity, similarity_fn(text_row.unsqueeze(0), neuron_in_target_feats, device=device)), 0)
         similarity = torch.cat((similarity, sim), 0)
     
     del clip_feats
@@ -190,7 +190,6 @@ def get_cos_similarity(preds, gt, clip_model, mpnet_model, device="cuda", batch_
     pred_embeds = []
     gt_embeds = []
 
-    #print(preds)
     with torch.no_grad():
         for i in range(math.ceil(len(pred_tokens)/batch_size)):
             pred_embeds.append(clip_model.encode_text(pred_tokens[batch_size*i:batch_size*(i+1)]))
