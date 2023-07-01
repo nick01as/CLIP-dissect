@@ -147,7 +147,7 @@ def save_activations(clip_name, target_name, target_layers, d_probe,
                             batch_size, device, pool_mode)
     return
     
-def get_similarity_from_activations(target_save_name, clip_save_name, text_save_name, similarity_fn, 
+def get_similarity_from_activations(target_save_name, clip_save_name, text_save_name, similarity_fn, k = 5 
                                    return_target_feats=True, device="cuda"):
     
     image_features = torch.load(clip_save_name, map_location='cpu').float()
@@ -174,7 +174,7 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
         sim = torch.cat((similarity, similarity_fn(clip_feats, neuron_in_target_feats, device=device)), 0).to(device)
         vals, ids = torch.topk(sim, k = k, dim = 1, largest = True)
         # vals, ids = torch.topk(similarities[orig_id], k=1, largest=True)
-        best_ids = torch.tensor(ids)
+        best_ids = torch.tensor(ids).to(device)
         similarity = torch.cat((similarity, best_ids), 0)
         del sim, best_ids
         neuron_id += 64
