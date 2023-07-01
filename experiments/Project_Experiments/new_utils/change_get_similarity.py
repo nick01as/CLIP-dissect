@@ -165,12 +165,12 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
     print("CLIP feats shape: {}".format(clip_feats.shape))
     similarity = torch.empty((0,clip_feats.shape[1]), dtype = torch.float32).to(device)
     for neuron_id in range(target_feats.shape[0]):
-        print("Neuron: {}".format(neuron_id))
         neuron_in_target_feats = target_feats[:, neuron_id : neuron_id + 1]
         sim = similarity_fn(clip_feats[0].unsqueeze(0), neuron_in_target_feats, device=device).to(device)
-        print("CLIP feats[0] shape: {}".format(clip_feats[0].unsqueeze(0).shape))
+        # print("CLIP feats[0] shape: {}".format(clip_feats[0].unsqueeze(0).shape))
         for text_row in clip_feats[1:]:
-            print("text_row shape: {}".format(text_row.unsqueeze(0).shape))
+            print("Neuron: {}, Row: {}/{}".format(neuron_id, text_row, clip_feats.shape[0]))
+            # print("text_row shape: {}".format(text_row.unsqueeze(0).shape))
             sim = torch.cat((similarity, similarity_fn(text_row.unsqueeze(0), neuron_in_target_feats, device=device)), 0)
         similarity = torch.cat((similarity, sim), 0)
     
