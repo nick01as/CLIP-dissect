@@ -170,7 +170,7 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
         print("CLIP feats[0] shape: {}".format(clip_feats[0].unsqueeze(0).shape))
         for text_row in clip_feats[1:]:
             print("text_row shape: {}".format(text_row.unsqueeze(0).shape))
-          sim = torch.cat((similarity, similarity_fn(text_row.unsqueeze(0), neuron_in_target_feats, device=device)), 0)
+            sim = torch.cat((similarity, similarity_fn(text_row.unsqueeze(0), neuron_in_target_feats, device=device)), 0)
         similarity = torch.cat((similarity, sim), 0)
     
     del clip_feats
