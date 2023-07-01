@@ -176,6 +176,7 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
         best_ids = torch.tensor(ids).to(device)
         similarity = torch.cat((similarity, best_ids), 0)
         del sim, best_ids, vals, ids
+        torch.cuda.empty_cache()
         neuron_id += 64
     
     del clip_feats
