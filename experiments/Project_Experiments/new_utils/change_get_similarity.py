@@ -173,7 +173,7 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
         else: neuron_in_target_feats = target_feats[:, neuron_id : ]
         # sim = similarity_fn(clip_feats, neuron_in_target_feats, device=device).to(device)
         sim = torch.empty((neuron_in_target_feats.shape[1],100), dtype = torch.float32).to(device)
-        print("sim shape: {}".format(sim.shape))
+        print("sim shape: ({},{})".format(sim.shape[0],sim.shape[1]))
         vals, ids = torch.topk(sim, k = k, dim = 1, largest = True)
         del sim, vals
         torch.cuda.empty_cache()
