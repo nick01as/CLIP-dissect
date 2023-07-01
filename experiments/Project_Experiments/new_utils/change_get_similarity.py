@@ -163,7 +163,7 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
 
     """ Edited Part """
     print("CLIP feats shape: {}".format(clip_feats.shape))
-    similarity = torch.empty((0,clip_feats.shape[1]), dtype = torch.float32).to(device)
+    similarity = torch.empty((0,k), dtype = torch.float32).to(device)
                                        
     neuron_id = 0
     print(target_feats.shape)
