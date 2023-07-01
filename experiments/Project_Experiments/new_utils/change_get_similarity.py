@@ -172,7 +172,7 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
         if neuron_id + 31 < target_feats.shape[1]: neuron_in_target_feats = target_feats[:, neuron_id : neuron_id + 32]
         else: neuron_in_target_feats = target_feats[:, neuron_id : ]
         # sim = similarity_fn(clip_feats, neuron_in_target_feats, device=device).to(device)
-        sim = torch.tensor(100)
+        sim = torch.empty((1,100), dtype = torch.float32).to(device)
         vals, ids = torch.topk(sim, k = k, dim = 1, largest = True)
         del sim, vals
         torch.cuda.empty_cache()
