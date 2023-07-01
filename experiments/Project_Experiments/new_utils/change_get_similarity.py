@@ -6,6 +6,7 @@ import clip
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 import data_utils
+import gc
 
 PM_SUFFIX = {"max":"_max", "avg":""}
 
@@ -158,6 +159,7 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
         clip_feats = (image_features @ text_features.T)
     del image_features, text_features
     torch.cuda.empty_cache()
+    gc.collect()
     
     target_feats = torch.load(target_save_name, map_location='cpu')
 
@@ -177,22 +179,27 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
         vals, ids = torch.topk(sim, k = k, dim = 1, largest = True)
         del sim, vals
         torch.cuda.empty_cache()
+        gc.collect()
         best_ids = torch.tensor(ids).to(device)
         del ids
         torch.cuda.empty_cache()
+        gc.collect()
         similarity = torch.cat((similarity, best_ids), 0)
         del best_ids
         torch.cuda.empty_cache()
+        gc.collect()
         neuron_id += 32
     
     del clip_feats
     torch.cuda.empty_cache()
+    gc.collect()
     
     if return_target_feats:
         return similarity, target_feats
     else:
         del target_feats
         torch.cuda.empty_cache()
+        gc.collect()
         return similarity
 
 def get_cos_similarity(preds, gt, clip_model, mpnet_model, device="cuda", batch_size=200):
