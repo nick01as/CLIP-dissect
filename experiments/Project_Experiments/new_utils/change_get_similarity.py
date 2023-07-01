@@ -164,20 +164,24 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
     """ Edited Part """
     print("CLIP feats shape: {}".format(clip_feats.shape))
     similarity = torch.empty((0,k), dtype = torch.float32).to(device)
-                                       
+
     neuron_id = 0
     print(target_feats.shape)
     while neuron_id < target_feats.shape[1]:
         print("Neuron ID: {}".format(neuron_id))
-        if neuron_id + 63 < target_feats.shape[1]: neuron_in_target_feats = target_feats[:, neuron_id : neuron_id + 64]
+        if neuron_id + 31 < target_feats.shape[1]: neuron_in_target_feats = target_feats[:, neuron_id : neuron_id + 32]
         else: neuron_in_target_feats = target_feats[:, neuron_id : ]
         sim = similarity_fn(clip_feats, neuron_in_target_feats, device=device).to(device)
         vals, ids = torch.topk(sim, k = k, dim = 1, largest = True)
-        best_ids = torch.tensor(ids).to(device)
-        similarity = torch.cat((similarity, best_ids), 0)
-        del sim, best_ids, vals, ids
+        del sim, vals
         torch.cuda.empty_cache()
-        neuron_id += 64
+        best_ids = torch.tensor(ids).to(device)
+        del ids
+        torch.cuda.empty_cache()
+        similarity = torch.cat((similarity, best_ids), 0)
+        del best_ids
+        torch.cuda.empty_cache()
+        neuron_id += 32
     
     del clip_feats
     torch.cuda.empty_cache()
