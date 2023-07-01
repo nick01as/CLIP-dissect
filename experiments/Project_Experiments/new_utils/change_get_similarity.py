@@ -178,7 +178,7 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
     neuron_id = 0
     while neuron_id < target_feats.shape[0]:
         print("Neuron ID: {}".format(neuron_id))
-        if neuron_id + 64 <= target_feats.shape[0]: neuron_in_target_feats = target_feats[:, neuron_id : neuron_id + 64]
+        if neuron_id + 64 < target_feats.shape[0]: neuron_in_target_feats = target_feats[:, neuron_id : neuron_id + 64]
         else: neuron_in_target_feats = target_feats[:, neuron_id : ]
         similarity = torch.cat((similarity, similarity_fn(clip_feats, neuron_in_target_feats, device=device)), 0)
         neuron_id += 64
