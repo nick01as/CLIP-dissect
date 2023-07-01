@@ -51,6 +51,7 @@ def soft_wpmi(clip_feats, target_feats, top_k=100, a=10, lam=1, device='cuda',
     
     with torch.no_grad():
         torch.cuda.empty_cache()
+        gc.collect()
         clip_feats = torch.nn.functional.softmax(a*clip_feats, dim=1)
 
         inds = torch.topk(target_feats, dim=0, k=top_k)[1]
@@ -72,6 +73,9 @@ def soft_wpmi(clip_feats, target_feats, top_k=100, a=10, lam=1, device='cuda',
         prob_d = (torch.logsumexp(prob_d_given_e, dim=0, keepdim=True) - 
                   torch.log(prob_d_given_e.shape[0]*torch.ones([1]).to(device)))
         mutual_info = prob_d_given_e - lam*prob_d
+        del prob_d, prob_d_given_e, p_in_examples, clip_feats, inds
+        torch.cuda.empty_cache()
+        gc.collect()
     return mutual_info
 
 def wpmi(clip_feats, target_feats, top_k=28, a=2, lam=0.6, device='cuda', min_prob=1e-7):
