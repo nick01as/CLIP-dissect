@@ -57,7 +57,7 @@ def soft_wpmi(clip_feats, target_feats, top_k=100, a=10, lam=1, device='cuda',
         prob_d_given_e = []
 
         p_in_examples = p_start-(torch.arange(start=0, end=top_k)/top_k*(p_start-p_end)).unsqueeze(1).to(device)
-        for orig_id in tqdm(range(target_feats.shape[1])):
+        for orig_id in range(target_feats.shape[1]):
             
             curr_clip_feats = clip_feats.to(device)
             
