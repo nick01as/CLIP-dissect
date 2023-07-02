@@ -60,7 +60,7 @@ def soft_wpmi(clip_feats, target_feats, target_neuron, top_k=100, a=10, lam=1, d
 
         p_in_examples = p_start-(torch.arange(start=0, end=top_k)/top_k*(p_start-p_end)).unsqueeze(1).to(device)
         
-        curr_clip_feats = clip_feats.gather(0, inds[:,target_neuron:target_neuron+1].expand(-1,0)).to(device)
+        curr_clip_feats = clip_feats.gather(0, inds[:,target_neuron:target_neuron+1].expand(-1,clip_feats.shape[1])).to(device)
         
         curr_p_d_given_e = 1+p_in_examples*(curr_clip_feats-1)
         curr_p_d_given_e = torch.sum(torch.log(curr_p_d_given_e+min_prob), dim=0, keepdim=True)
