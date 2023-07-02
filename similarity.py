@@ -58,7 +58,7 @@ def soft_wpmi(clip_feats, target_feats, target_neuron, top_k=100, a=10, lam=1, d
         inds = torch.topk(target_feats, dim=0, k=top_k)[1]
         prob_d_given_e = []
 
-        print(inds.shape)
+        print("Inds shape: {}".format(inds.shape))
 
         p_in_examples = p_start-(torch.arange(start=0, end=top_k)/top_k*(p_start-p_end)).unsqueeze(1).to(device)
         
@@ -71,6 +71,8 @@ def soft_wpmi(clip_feats, target_feats, target_neuron, top_k=100, a=10, lam=1, d
 
         prob_d_given_e = torch.cat(prob_d_given_e, dim=0)
         print(prob_d_given_e.shape)
+        for i in range(300):
+            print(prob_d_given_e[0][i])
         #logsumexp trick to avoid underflow
         prob_d = (torch.logsumexp(prob_d_given_e, dim=0, keepdim=True) - 
                   torch.log(prob_d_given_e.shape[0]*torch.ones([1]).to(device)))
