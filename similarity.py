@@ -68,6 +68,8 @@ def soft_wpmi(clip_feats, target_feats, target_neuron, top_k=100, a=10, lam=1, d
         print(inds[:,0])
         print("clip_feats")
         print(clip_feats)
+        print("curr_clip_feats")
+        print(curr_clip_feats)
         
         curr_p_d_given_e = 1+p_in_examples*(curr_clip_feats-1)
         curr_p_d_given_e = torch.sum(torch.log(curr_p_d_given_e+min_prob), dim=0, keepdim=True)
