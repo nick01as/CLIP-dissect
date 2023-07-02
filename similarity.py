@@ -47,7 +47,7 @@ def cos_similarity(clip_feats, target_feats, device='cuda'):
             similarities.append(torch.cat(curr_similarities, dim=1))
     return torch.cat(similarities, dim=0)
 
-def soft_wpmi(clip_feats, target_feats, target_neuron, top_k=100, a=1000, lam=1, device='cuda',
+def soft_wpmi(clip_feats, target_feats, target_neuron, top_k=100, a=10, lam=1, device='cuda',
                         min_prob=1e-7, p_start=0.998, p_end=0.97):
     
     with torch.no_grad():
