@@ -164,7 +164,7 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
     target_feats = torch.load(target_save_name, map_location='cpu')
     target_feats = target_feats[:,target_neuron:target_neuron + 1]
                                        
-    similarity = similarity_fn(clip_feats, target_feats, device=device)
+    similarity = similarity_fn(clip_feats, target_feats, target_neuron = target_neuron, device=device)
     
     del clip_feats
     torch.cuda.empty_cache()
