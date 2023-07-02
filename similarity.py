@@ -77,7 +77,8 @@ def soft_wpmi(clip_feats, target_feats, target_neuron, top_k=100, a=1000, lam=1,
         torch.cuda.empty_cache()
 
         prob_d_given_e = torch.cat(prob_d_given_e, dim=0)
-        print(prob_d_given_e.shape)
+        print("p_d given e: {}".format(prob_d_given_e.shape))
+        print(prob_d_given_e)
         #logsumexp trick to avoid underflow
         prob_d = (torch.logsumexp(prob_d_given_e, dim=0, keepdim=True) - 
                   torch.log(prob_d_given_e.shape[0]*torch.ones([1]).to(device)))
