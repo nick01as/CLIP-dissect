@@ -152,7 +152,7 @@ def save_activations(clip_name, target_name, target_layers, d_probe,
     save_clip_image_features(clip_model, data_c, clip_save_name, batch_size, device)
     save_target_activations(target_model, data_t, target_save_name, target_layers,
                             batch_size, device, pool_mode)
-    del clip_name, target_name, target_layers, d_probe, concept_set, batch_size, device, pool_mode, save_dir, clip_model, clip_preprocess,
+    del (clip_name, target_name, target_layers, d_probe, concept_set, batch_size, device, pool_mode, save_dir, clip_model, clip_preprocess,
                                 target_model, target_preprocess, data_c, data_t, words, text, save_names, target_save_name, clip_save_name, text_save_name)
     torch.cuda.empty_cache()
     gc.collect()
