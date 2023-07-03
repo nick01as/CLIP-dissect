@@ -3,6 +3,7 @@ import math
 from tqdm import tqdm
 from scipy import stats
 from matplotlib import pyplot as plt
+import gc
 
 def cos_similarity_cubed(clip_feats, target_feats, device='cuda', batch_size=10000, min_norm=1e-3):
     """
