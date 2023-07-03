@@ -46,7 +46,7 @@ def cos_similarity(clip_feats, target_feats, device='cuda'):
             similarities.append(torch.cat(curr_similarities, dim=1))
     return torch.cat(similarities, dim=0)
 
-def soft_wpmi(clip_feats, target_feats, top_k=100, a=10, lam=1, device='cuda',
+def soft_wpmi(clip_feats, target_feats, target_neuron, top_k=100, a=10, lam=1, device='cuda',
                         min_prob=1e-7, p_start=0.998, p_end=0.97):
     
     with torch.no_grad():
@@ -54,14 +54,17 @@ def soft_wpmi(clip_feats, target_feats, top_k=100, a=10, lam=1, device='cuda',
         clip_feats = torch.nn.functional.softmax(a*clip_feats, dim=1)
 
         inds = torch.topk(target_feats, dim=0, k=top_k)[1]
+        del target_feats
+        gc.collect()
+        
         prob_d_given_e = []
 
-        print("clip_feats shape: {}".format(clip_feats.shape))
-        print("inds shape: {}".format(inds.shape))
-        print("inds")
-        print(inds)
-        print("clip_feats")
-        print(clip_feats)
+        # print("clip_feats shape: {}".format(clip_feats.shape))
+        # print("inds shape: {}".format(inds.shape))
+        # print("inds")
+        # print(inds)
+        # print("clip_feats")
+        # print(clip_feats)
 
         p_in_examples = p_start-(torch.arange(start=0, end=top_k)/top_k*(p_start-p_end)).unsqueeze(1).to(device)
         for orig_id in tqdm(range(target_feats.shape[1])):
@@ -72,7 +75,10 @@ def soft_wpmi(clip_feats, target_feats, top_k=100, a=10, lam=1, device='cuda',
             curr_p_d_given_e = torch.sum(torch.log(curr_p_d_given_e+min_prob), dim=0, keepdim=True)
             prob_d_given_e.append(curr_p_d_given_e)
             torch.cuda.empty_cache()
-      
+        del p_in_examples, clip_feats, inds, curr_clip_feats, curr_p_d_given_e, orig_id
+        torch.cuda.empty_cache()
+        gc.collect()
+        
         prob_d_given_e = torch.cat(prob_d_given_e, dim=0)
         print("prob_d given e shape: {}".format(prob_d_given_e.shape))
         print(prob_d_given_e)
@@ -82,7 +88,10 @@ def soft_wpmi(clip_feats, target_feats, top_k=100, a=10, lam=1, device='cuda',
         print("prob_d shape: {}".format(prob_d.shape))
         print(prob_d)
         mutual_info = prob_d_given_e - lam*prob_d
-    return mutual_info
+        del prob_d, prob_d_given_e, top_k, a, lam, device, min_prob, p_start, p_end
+        torch.cuda.empty_cache()
+        gc.collect()
+    return mutual_info[target_neuron]
 
 def wpmi(clip_feats, target_feats, top_k=28, a=2, lam=0.6, device='cuda', min_prob=1e-7):
     
