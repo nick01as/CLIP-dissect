@@ -47,7 +47,7 @@ def cos_similarity(clip_feats, target_feats, device='cuda'):
             similarities.append(torch.cat(curr_similarities, dim=1))
     return torch.cat(similarities, dim=0)
 
-def soft_wpmi(clip_feats, target_feats, target_neuron, top_k=100, a=10, lam=0.999, device='cuda',
+def soft_wpmi(clip_feats, target_feats, target_neuron, total_neurons, top_k=100, a=10, lam=1, device='cuda',
                         min_prob=1e-7, p_start=0.998, p_end=0.97):
     
     with torch.no_grad():
@@ -81,11 +81,11 @@ def soft_wpmi(clip_feats, target_feats, target_neuron, top_k=100, a=10, lam=0.99
         print(prob_d_given_e)
         #logsumexp trick to avoid underflow
         prob_d = (torch.logsumexp(prob_d_given_e, dim=0, keepdim=True) - 
-                  torch.log(prob_d_given_e.shape[0]*torch.ones([1]).to(device)))
+                  torch.log(total_neurons * torch.ones([1]).to(device)))
         print("prob_d shape: {}".format(prob_d.shape))
         print(prob_d)
         mutual_info = prob_d_given_e - lam*prob_d
-        del prob_d, prob_d_given_e, p_in_examples, clip_feats, inds
+        del prob_d, prob_d_given_e, p_in_examples, clip_feats, inds, target_feats, target_neuron, top_k, a, lam, device, min_prob, p_start, p_end, total_neurons
         torch.cuda.empty_cache()
         gc.collect()
     return mutual_info
