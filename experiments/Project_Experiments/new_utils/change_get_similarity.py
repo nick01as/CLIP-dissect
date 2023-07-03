@@ -71,8 +71,9 @@ def save_target_activations(target_model, dataset, save_name, target_layers = ["
         torch.save(torch.cat(all_features[target_layer]), save_names[target_layer])
         hooks[target_layer].remove()
     #free memory
-    del all_features
+    del all_features, save_names, hooks, features, dataset, target_model, save_name, target_layers, batch_size, device, pool_mode
     torch.cuda.empty_cache()
+    gc.collect()
     return
 
 
@@ -92,8 +93,9 @@ def save_clip_image_features(model, dataset, save_name, batch_size=1000 , device
             all_features.append(features)
     torch.save(torch.cat(all_features), save_name)
     #free memory
-    del all_features
+    del all_features, features, save_dir, dataset, model, batch_size, save_name, device
     torch.cuda.empty_cache()
+    gc.collect()
     return
 
 def save_clip_text_features(model, text, save_name, batch_size=1000):
@@ -106,8 +108,9 @@ def save_clip_text_features(model, text, save_name, batch_size=1000):
             text_features.append(model.encode_text(text[batch_size*i:batch_size*(i+1)]))
     text_features = torch.cat(text_features, dim=0)
     torch.save(text_features, save_name)
-    del text_features
+    del text_features, save_name, model, text, batch_size
     torch.cuda.empty_cache()
+    gc.collect()
     return
 
 def get_clip_text_features(model, text, batch_size=1000):
@@ -119,6 +122,9 @@ def get_clip_text_features(model, text, batch_size=1000):
         for i in tqdm(range(math.ceil(len(text)/batch_size))):
             text_features.append(model.encode_text(text[batch_size*i:batch_size*(i+1)]))
     text_features = torch.cat(text_features, dim=0)
+    del model, text, batch_size
+    torch.cuda.empty_cache()
+    gc.collect()
     return text_features
 
 def save_activations(clip_name, target_name, target_layers, d_probe, 
@@ -146,6 +152,10 @@ def save_activations(clip_name, target_name, target_layers, d_probe,
     save_clip_image_features(clip_model, data_c, clip_save_name, batch_size, device)
     save_target_activations(target_model, data_t, target_save_name, target_layers,
                             batch_size, device, pool_mode)
+    del clip_name, target_name, target_layers, d_probe, concept_set, batch_size, device, pool_mode, save_dir, clip_model, clip_preprocess,
+                        target_model, target_preprocess, data_c, data_t, words, text, save_names, target_save_name, clip_save_name, text_save_name)
+    torch.cuda.empty_cache()
+    gc.collect()
     return
     
 def get_similarity_from_activations(target_save_name, clip_save_name, text_save_name, similarity_fn, target_neuron, k = 5,  
