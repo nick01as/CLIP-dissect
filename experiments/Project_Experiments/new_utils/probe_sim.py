@@ -79,6 +79,8 @@ def soft_wpmi(clip_feats, target_feats, top_k=100, a=10, lam=1, device='cuda',
         #logsumexp trick to avoid underflow
         prob_d = (torch.logsumexp(prob_d_given_e, dim=0, keepdim=True) - 
                   torch.log(prob_d_given_e.shape[0]*torch.ones([1]).to(device)))
+        print("prob_d shape: {}".format(prob_d.shape))
+        print(prob_d)
         mutual_info = prob_d_given_e - lam*prob_d
     return mutual_info
 
