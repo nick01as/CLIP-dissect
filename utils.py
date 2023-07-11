@@ -222,6 +222,3 @@ def _make_save_dir(save_name):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     return
-
-    
-    
