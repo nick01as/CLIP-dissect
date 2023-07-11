@@ -3,7 +3,6 @@ import math
 from tqdm import tqdm
 from scipy import stats
 from matplotlib import pyplot as plt
-import gc
 
 def cos_similarity_cubed(clip_feats, target_feats, device='cuda', batch_size=10000, min_norm=1e-3):
     """
@@ -47,47 +46,32 @@ def cos_similarity(clip_feats, target_feats, device='cuda'):
             similarities.append(torch.cat(curr_similarities, dim=1))
     return torch.cat(similarities, dim=0)
 
-def soft_wpmi(clip_feats, target_feats, target_neuron, total_neurons = 2048, top_k=100, a=10, lam=1, device='cuda',
+def soft_wpmi(clip_feats, target_feats, top_k=100, a=10, lam=1, device='cuda',
                         min_prob=1e-7, p_start=0.998, p_end=0.97):
     
     with torch.no_grad():
         torch.cuda.empty_cache()
-        gc.collect()
         clip_feats = torch.nn.functional.softmax(a*clip_feats, dim=1)
 
         inds = torch.topk(target_feats, dim=0, k=top_k)[1]
         prob_d_given_e = []
 
         p_in_examples = p_start-(torch.arange(start=0, end=top_k)/top_k*(p_start-p_end)).unsqueeze(1).to(device)
-        
-        curr_clip_feats = clip_feats.gather(0, inds[:,:].expand(-1,clip_feats.shape[1])).to(device)
-        print("clip_feats shape: {}".format(clip_feats.shape))
-        print("inds shape: {}".format(inds.shape))
-        print("curr_clip shape: {}".format(curr_clip_feats.shape))
-        print("inds")
-        print(inds[:,0])
-        print("clip_feats")
-        print(clip_feats)
-        print("curr_clip_feats")
-        print(curr_clip_feats)
-        
-        curr_p_d_given_e = 1+p_in_examples*(curr_clip_feats-1)
-        curr_p_d_given_e = torch.sum(torch.log(curr_p_d_given_e+min_prob), dim=0, keepdim=True)
-        prob_d_given_e.append(curr_p_d_given_e)
-        torch.cuda.empty_cache()
+        for orig_id in tqdm(range(target_feats.shape[1])):
+            
+            curr_clip_feats = clip_feats.gather(0, inds[:,orig_id:orig_id+1].expand(-1,clip_feats.shape[1])).to(device)
+            
+            curr_p_d_given_e = 1+p_in_examples*(curr_clip_feats-1)
+            curr_p_d_given_e = torch.sum(torch.log(curr_p_d_given_e+min_prob), dim=0, keepdim=True)
+            prob_d_given_e.append(curr_p_d_given_e)
+            torch.cuda.empty_cache()
 
         prob_d_given_e = torch.cat(prob_d_given_e, dim=0)
-        print("p_d given e: {}".format(prob_d_given_e.shape))
-        print(prob_d_given_e)
+        print(prob_d_given_e.shape)
         #logsumexp trick to avoid underflow
         prob_d = (torch.logsumexp(prob_d_given_e, dim=0, keepdim=True) - 
-                  torch.log(total_neurons * torch.ones([1]).to(device)))
-        print("prob_d shape: {}".format(prob_d.shape))
-        print(prob_d)
+                  torch.log(prob_d_given_e.shape[0]*torch.ones([1]).to(device)))
         mutual_info = prob_d_given_e - lam*prob_d
-        del prob_d, prob_d_given_e, p_in_examples, clip_feats, inds, target_feats, target_neuron, top_k, a, lam, device, min_prob, p_start, p_end, total_neurons
-        torch.cuda.empty_cache()
-        gc.collect()
     return mutual_info
 
 def wpmi(clip_feats, target_feats, top_k=28, a=2, lam=0.6, device='cuda', min_prob=1e-7):
@@ -148,4 +132,3 @@ def rank_reorder(clip_feats, target_feats, device="cuda", p=3, top_fraction=0.05
 
         errors = torch.cat(errors, dim=0)
     return -errors
-
