@@ -154,19 +154,30 @@ def save_activations(clip_name, target_name, target_layers, d_probe,
     return
 
 def save_new_activations(clip_name, target_name, target_layers, d_probe, new_images,
-                     concept_set, batch_size, device, pool_mode, save_dir):
+                     concept_set, batch_size, device, pool_mode, save_dir, r_d_probe = 'cifar100_train'):
     
     clip_model, clip_preprocess = clip.load(clip_name, device=device)
     target_model, target_preprocess = data_utils.get_target_model(target_name, device)
+
+    data_test = data_utils.get_data(r_d_probe, clip_preprocess)
+    print("Orig Data c shape: ".format(dir(data_test)))
 
     data_c = d_probe
     data_t = d_probe
 
     for img in new_images:
-        data_c.data = np.append(data_c.data, [np.array(clip_preprocess(img))], axis = 0)
+        clip_img_array = np.transpose(clip_preprocess(img).cpu().detach().numpy(), (1,2,0))
+        clip_resized_img = Image.fromarray(np.uint8(clip_img_array)).resize([32,32])
+        target_img_array = np.transpose(target_preprocess(img).cpu().detach().numpy(), (1,2,0))
+        target_resized_img = Image.fromarray(np.uint8(target_img_array)).resize([32,32])
+
+        print("Processed array shape clip: {}".format(np.array(clip_resized_img).shape))
+        print(type(clip_preprocess(img)))
+        data_c.data = np.append(data_c.data, [np.array(clip_resized_img)], axis = 0)
         data_c.targets = np.append(d_probe.targets, -1)
 
-        data_t.data = np.append(data_t.data, [np.array(target_preprocess(img))], axis = 0)
+        print("Processed array shape target: {}".format(np.array(clip_preprocess(img)).shape))
+        data_t.data = np.append(data_t.data, [np.array(target_resized_img)], axis = 0)
         data_t.targets = np.append(d_probe.targets, -1)
     
     save_names = get_save_names(clip_name = clip_name, target_name = target_name,
@@ -254,6 +265,3 @@ def _make_save_dir(save_name):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     return
-
-    
-    
