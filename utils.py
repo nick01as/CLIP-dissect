@@ -159,8 +159,8 @@ def save_new_activations(clip_name, target_name, target_layers, d_probe,
     clip_model, clip_preprocess = clip.load(clip_name, device=device)
     target_model, target_preprocess = data_utils.get_target_model(target_name, device)
 
-    data_c = [np.array(clip_preprocess(Image.fromarray(np.uint8(img)))) for img in d_probe]
-    data_t = [np.array(target_preprocess(Image.fromarray(np.uint8(img)))) for img in d_probe]
+    data_c = [np.array(clip_preprocess(img)) for img in d_probe]
+    data_t = [np.array(target_preprocess(img)) for img in d_probe]
     
     save_names = get_save_names(clip_name = clip_name, target_name = target_name,
                                 target_layer = '{}', d_probe = d_probe, concept_set = concept_set,
