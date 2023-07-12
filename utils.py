@@ -163,10 +163,10 @@ def save_new_activations(clip_name, target_name, target_layers, d_probe, new_ima
     data_t = d_probe
 
     for img in new_images:
-        data_c.data = np.append(data_c.data, [np.array(clip_preprocess(Image.fromarray(np.uint8(img[0]))))], axis = 0)
+        data_c.data = np.append(data_c.data, [np.array(clip_preprocess(img))], axis = 0)
         data_c.targets = np.append(d_probe.targets, -1)
 
-        data_t.data = np.append(data_t.data, [np.array(clip_preprocess(Image.fromarray(np.uint8(img[0]))))], axis = 0)
+        data_t.data = np.append(data_t.data, [np.array(target_preprocess(img))], axis = 0)
         data_t.targets = np.append(d_probe.targets, -1)
     
     save_names = get_save_names(clip_name = clip_name, target_name = target_name,
