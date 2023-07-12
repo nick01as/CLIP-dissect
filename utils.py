@@ -153,14 +153,21 @@ def save_activations(clip_name, target_name, target_layers, d_probe,
                             batch_size, device, pool_mode)
     return
 
-def save_new_activations(clip_name, target_name, target_layers, d_probe, 
+def save_new_activations(clip_name, target_name, target_layers, d_probe, new_images,
                      concept_set, batch_size, device, pool_mode, save_dir):
     
     clip_model, clip_preprocess = clip.load(clip_name, device=device)
     target_model, target_preprocess = data_utils.get_target_model(target_name, device)
 
-    data_c = [np.array(clip_preprocess(img[0])) for img in d_probe]
-    data_t = [np.array(target_preprocess(img[0])) for img in d_probe]
+    data_c = d_probe
+    data_t = d_probe
+
+    for img in new_images:
+        data_c.data = np.append(data_c.data, [np.array(clip_preprocess(Image.fromarray(np.uint8(img[0]))))], axis = 0)
+        data_c.targets = np.append(d_probe.targets, -1)
+
+        data_t.data = np.append(data_t.data, [np.array(clip_preprocess(Image.fromarray(np.uint8(img[0]))))], axis = 0)
+        data_t.targets = np.append(d_probe.targets, -1)
     
     save_names = get_save_names(clip_name = clip_name, target_name = target_name,
                                 target_layer = '{}', d_probe = d_probe, concept_set = concept_set,
