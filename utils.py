@@ -6,6 +6,7 @@ import clip
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 import data_utils
+from PIL import Image
 
 PM_SUFFIX = {"max":"_max", "avg":""}
 
@@ -32,14 +33,20 @@ def get_activation(outputs, mode):
                 outputs.append(output.detach())
     return hook
 
-def get_save_names(clip_name, target_name, target_layer, d_probe, concept_set, pool_mode, save_dir):
-    
-    target_save_name = "{}/{}_{}_{}{}.pt".format(save_dir, d_probe, target_name, target_layer,
-                                             PM_SUFFIX[pool_mode])
-    clip_save_name = "{}/{}_{}.pt".format(save_dir, d_probe, clip_name.replace('/', ''))
+def get_save_names(clip_name, target_name, target_layer, d_probe, concept_set, pool_mode, save_dir, new_set = False):
+
+    if new_set == False:
+        target_save_name = "{}/{}_{}_{}{}.pt".format(save_dir, d_probe, target_name, target_layer,
+                                                 PM_SUFFIX[pool_mode])
+        clip_save_name = "{}/{}_{}.pt".format(save_dir, d_probe, clip_name.replace('/', ''))
+    else:
+        target_save_name = "{}/{}_{}_{}{}_new.pt".format(save_dir, d_probe, target_name, target_layer,
+                                                 PM_SUFFIX[pool_mode])
+        clip_save_name = "{}/{}_{}_new.pt".format(save_dir, d_probe, clip_name.replace('/', ''))
+        
     concept_set_name = (concept_set.split("/")[-1]).split(".")[0]
     text_save_name = "{}/{}_{}.pt".format(save_dir, concept_set_name, clip_name.replace('/', ''))
-    
+
     return target_save_name, clip_save_name, text_save_name
 
 def save_target_activations(target_model, dataset, save_name, target_layers = ["layer4"], batch_size = 1000,
@@ -120,28 +127,34 @@ def get_clip_text_features(model, text, batch_size=1000):
     text_features = torch.cat(text_features, dim=0)
     return text_features
 
-def save_activations(clip_name, target_name, target_layers, d_probe, 
+def save_activations(clip_name, target_name, target_layers, d_probe, contains_path 
                      concept_set, batch_size, device, pool_mode, save_dir):
     
     clip_model, clip_preprocess = clip.load(clip_name, device=device)
     target_model, target_preprocess = data_utils.get_target_model(target_name, device)
+                         
     #setup data
-    data_c = data_utils.get_data(d_probe, clip_preprocess)
-    data_t = data_utils.get_data(d_probe, target_preprocess)
+    if contains_path == True:
+        data_c = data_utils.get_data(d_probe, clip_preprocess)
+        data_t = data_utils.get_data(d_probe, target_preprocess)
+    else:
+        data_c = [np.array(clip_preprocess(Image.fromarray(np.uint8(img)))) for img in d_probe]
+        data_t = [np.array(target_preprocess(Image.fromarray(np.uint8(img)))) for img in d_probe]
 
-    with open(concept_set, 'r') as f: 
-        words = (f.read()).split('\n')
-    #ignore empty lines
-    words = [i for i in words if i!=""]
+    if contains_path == True:
+        with open(concept_set, 'r') as f: 
+            words = (f.read()).split('\n')
+        #ignore empty lines
+        words = [i for i in words if i!=""]
     
-    text = clip.tokenize(["{}".format(word) for word in words]).to(device)
+        text = clip.tokenize(["{}".format(word) for word in words]).to(device)
     
     save_names = get_save_names(clip_name = clip_name, target_name = target_name,
                                 target_layer = '{}', d_probe = d_probe, concept_set = concept_set,
-                                pool_mode=pool_mode, save_dir = save_dir)
+                                pool_mode=pool_mode, save_dir = save_dir, newSet = (not contains_path))
     target_save_name, clip_save_name, text_save_name = save_names
     
-    save_clip_text_features(clip_model, text, text_save_name, batch_size)
+    if contains_path == True: save_clip_text_features(clip_model, text, text_save_name, batch_size)
     save_clip_image_features(clip_model, data_c, clip_save_name, batch_size, device)
     save_target_activations(target_model, data_t, target_save_name, target_layers,
                             batch_size, device, pool_mode)
