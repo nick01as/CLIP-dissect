@@ -154,21 +154,17 @@ def save_activations(clip_name, target_name, target_layers, d_probe,
                             batch_size, device, pool_mode)
     return
 
-def save_new_activations(clip_name, target_name, target_layers, d_probe, new_images,d_probe_name,
-                     concept_set, batch_size, device, pool_mode, save_dir, r_d_probe = 'cifar100_train'):
+def save_new_activations(clip_name, target_name, target_layers, d_probe, new_images,
+                     concept_set, batch_size, device, pool_mode, save_dir):
     
     clip_model, clip_preprocess = clip.load(clip_name, device=device)
     target_model, target_preprocess = data_utils.get_target_model(target_name, device)
 
-    data_test = data_utils.get_data(r_d_probe, clip_preprocess)
+    data_c = data_utils.get_data(d_probe, clip_preprocess)
+    data_t = data_utils.get_data(d_probe, target_preprocess)
 
-    data_c = d_probe
-    data_t = d_probe
-
-    data_c.transform = transforms.Compose([clip_preprocess])
-    data_t.transform = transforms.Compose([target_preprocess])
-
-    for img in new_images:
+    for idx in new_images:
+        img = new_images[idx]
         clip_img_array = np.transpose(clip_preprocess(img).cpu().detach().numpy(), (1,2,0))
         clip_resized_img = Image.fromarray(np.uint8(clip_img_array)).resize([32,32])
         target_img_array = np.transpose(target_preprocess(img).cpu().detach().numpy(), (1,2,0))
@@ -181,7 +177,7 @@ def save_new_activations(clip_name, target_name, target_layers, d_probe, new_ima
         data_t.targets.append(-1)
     
     save_names = get_save_names(clip_name = clip_name, target_name = target_name,
-                                target_layer = '{}', d_probe = d_probe_name, concept_set = concept_set,
+                                target_layer = '{}', d_probe = d_probe, concept_set = concept_set,
                                 pool_mode=pool_mode, save_dir = save_dir, newSet = True)
     target_save_name, clip_save_name, text_save_name = save_names
 
