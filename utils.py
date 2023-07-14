@@ -164,16 +164,12 @@ def save_new_activations(clip_name, target_name, target_layers, d_probe, new_ima
     data_t = data_utils.get_data(d_probe, target_preprocess)
 
     for idx in new_images:
-        img = new_images[idx]
-        clip_img_array = np.transpose(clip_preprocess(img).cpu().detach().numpy(), (1,2,0))
-        clip_resized_img = Image.fromarray(np.uint8(clip_img_array)).resize([32,32])
-        target_img_array = np.transpose(target_preprocess(img).cpu().detach().numpy(), (1,2,0))
-        target_resized_img = Image.fromarray(np.uint8(target_img_array)).resize([32,32])
-
-        data_c.data = np.append(data_c.data, [np.array(clip_resized_img)], axis = 0)
+        img_array = np.array(new_images[idx])
+        
+        data_c.data = np.append(data_c.data, [img_array], axis = 0)
         data_c.targets.append(-1)
 
-        data_t.data = np.append(data_t.data, [np.array(target_resized_img)], axis = 0)
+        data_t.data = np.append(data_t.data, [img_array], axis = 0)
         data_t.targets.append(-1)
     
     save_names = get_save_names(clip_name = clip_name, target_name = target_name,
