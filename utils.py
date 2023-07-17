@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 import data_utils
 from PIL import Image
 from torchvision import transforms
+from matplotlib import pyplot as plt
 
 PM_SUFFIX = {"max":"_max", "avg":""}
 
@@ -160,8 +161,15 @@ def save_new_activations(clip_name, target_name, target_layers, d_probe, new_ima
     clip_model, clip_preprocess = clip.load(clip_name, device=device)
     target_model, target_preprocess = data_utils.get_target_model(target_name, device)
 
-    data_c = data_utils.get_data(d_probe, clip_preprocess)
-    data_t = data_utils.get_data(d_probe, target_preprocess)
+    tmp_class_c = data_utils.get_data(d_probe, clip_preprocess)
+    tmp_class_c.data = np.empty([0,32,32,3], dtype = np.uint8)
+    tmp_class_c.targets = []
+    data_c = tmp_class_c
+
+    tmp_class_t = data_utils.get_data(d_probe, target_preprocess)
+    tmp_class_t.data = np.empty([0,32,32,3], dtype = np.uint8)
+    tmp_class_t.targets = []
+    data_t = tmp_class_t
 
     for idx in new_images:
         img_array = np.array(new_images[idx])
@@ -171,7 +179,7 @@ def save_new_activations(clip_name, target_name, target_layers, d_probe, new_ima
 
         data_t.data = np.append(data_t.data, [img_array], axis = 0)
         data_t.targets.append(-1)
-    
+
     save_names = get_save_names(clip_name = clip_name, target_name = target_name,
                                 target_layer = '{}', d_probe = d_probe, concept_set = concept_set,
                                 pool_mode=pool_mode, save_dir = save_dir, newSet = True)
@@ -183,10 +191,15 @@ def save_new_activations(clip_name, target_name, target_layers, d_probe, new_ima
     return
     
 def get_similarity_from_activations(target_save_name, clip_save_name, text_save_name, similarity_fn, 
-                                   return_target_feats=True, device="cuda"):
+                                   new_target_save_name = None, new_clip_save_name = None, return_target_feats=True, new_set=False, device="cuda"):
     
     image_features = torch.load(clip_save_name, map_location='cpu').float()
     text_features = torch.load(text_save_name, map_location='cpu').float()
+
+    if new_set == True:
+      new_image_features = torch.load(new_clip_save_name, map_location='cpu').float()
+      image_features = torch.cat((image_features, new_image_features), 0)
+
     with torch.no_grad():
         image_features /= image_features.norm(dim=-1, keepdim=True)
         text_features /= text_features.norm(dim=-1, keepdim=True)
@@ -195,6 +208,11 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
     torch.cuda.empty_cache()
     
     target_feats = torch.load(target_save_name, map_location='cpu')
+
+    if new_set == True:
+      new_target_feats = torch.load(new_target_save_name, map_location='cpu')
+      target_feats = torch.cat((target_feats,new_target_feats), 0)
+
     similarity = similarity_fn(clip_feats, target_feats, device=device)
     
     del clip_feats
