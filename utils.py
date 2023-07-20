@@ -191,7 +191,7 @@ def save_new_activations(clip_name, target_name, target_layers, d_probe, new_ima
     return
     
 def get_similarity_from_activations(target_save_name, clip_save_name, text_save_name, similarity_fn, 
-                                   new_target_save_name = None, new_clip_save_name = None, return_target_feats=True, new_set=False, device="cuda"):
+                                   new_target_save_name = None, new_clip_save_name = None, return_target_feats=True, new_set=False, k = 100, device="cuda"):
     
     image_features = torch.load(clip_save_name, map_location='cpu').float()
     text_features = torch.load(text_save_name, map_location='cpu').float()
@@ -213,7 +213,7 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
       new_target_feats = torch.load(new_target_save_name, map_location='cpu')
       target_feats = torch.cat((target_feats,new_target_feats), 0)
 
-    similarity = similarity_fn(clip_feats, target_feats, device=device)
+    similarity = similarity_fn(clip_feats, target_feats, top_k=k, device=device)
     
     del clip_feats
     torch.cuda.empty_cache()
