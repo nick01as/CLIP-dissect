@@ -41,12 +41,14 @@ def get_save_names(clip_name, target_name, target_layer, d_probe, concept_set, p
         target_save_name = "{}/{}_{}_{}{}.pt".format(save_dir, d_probe, target_name, target_layer,
                                                  PM_SUFFIX[pool_mode])
         clip_save_name = "{}/{}_{}.pt".format(save_dir, d_probe, clip_name.replace('/', ''))
+        concept_set_name = (concept_set.split("/")[-1]).split(".")[0]
+        text_save_name = "{}/{}_{}.pt".format(save_dir, concept_set_name, clip_name.replace('/', ''))
     else:
         target_save_name = "{}/{}_{}_{}{}_new.pt".format(save_dir, d_probe, target_name, target_layer,
                                                  PM_SUFFIX[pool_mode])
         clip_save_name = "{}/{}_{}_new.pt".format(save_dir, d_probe, clip_name.replace('/', ''))
-    concept_set_name = (concept_set.split("/")[-1]).split(".")[0]
-    text_save_name = "{}/{}_{}.pt".format(save_dir, concept_set_name, clip_name.replace('/', ''))
+        concept_set_name = (concept_set.split("/")[-1]).split(".")[0]
+        text_save_name = "{}/{}_{}_new.pt".format(save_dir, concept_set_name, clip_name.replace('/', ''))
     
     return target_save_name, clip_save_name, text_save_name
 
@@ -156,7 +158,7 @@ def save_activations(clip_name, target_name, target_layers, d_probe,
     return
 
 def save_new_activations(clip_name, target_name, target_layers, d_probe, new_images,
-                     concept_set, batch_size, device, pool_mode, save_dir):
+                     concept_set, batch_size, device, pool_mode, save_dir, wordList = []):
     
     clip_model, clip_preprocess = clip.load(clip_name, device=device)
     target_model, target_preprocess = data_utils.get_target_model(target_name, device)
@@ -170,6 +172,8 @@ def save_new_activations(clip_name, target_name, target_layers, d_probe, new_ima
     tmp_class_t.data = np.empty([0,32,32,3], dtype = np.uint8)
     tmp_class_t.targets = []
     data_t = tmp_class_t
+    
+    text = clip.tokenize(["{}".format(word) for word in wordList]).to(device)
 
     for idx in new_images:
         img_array = np.array(new_images[idx])
@@ -185,6 +189,7 @@ def save_new_activations(clip_name, target_name, target_layers, d_probe, new_ima
                                 pool_mode=pool_mode, save_dir = save_dir, newSet = True)
     target_save_name, clip_save_name, text_save_name = save_names
 
+    save_clip_text_features(clip_model, text, text_save_name, batch_size)
     save_clip_image_features(clip_model, data_c, clip_save_name, batch_size, device)
     save_target_activations(target_model, data_t, target_save_name, target_layers,
                             batch_size, device, pool_mode)
