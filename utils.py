@@ -61,7 +61,7 @@ def save_target_activations(target_model, dataset, save_name, target_layers = ["
     save_names = {}    
     for target_layer in target_layers:
         save_names[target_layer] = save_name.format(target_layer)
-        
+
     if _all_saved(save_names):
         return
     
@@ -119,13 +119,43 @@ def save_clip_text_features(model, text, save_name, batch_size=1000):
     torch.cuda.empty_cache()
     return
 
+def get_target_activations(target_model, preprocess, images, target_layers = ["layer4"], batch_size = 1000,
+                            device = "cuda", pool_mode='avg'):
+    
+    all_features = {target_layer:[] for target_layer in target_layers}
+    
+    hooks = {}
+    for target_layer in target_layers:
+        command = "target_model.{}.register_forward_hook(get_activation(all_features[target_layer], pool_mode))".format(target_layer)
+        hooks[target_layer] = eval(command)
+    
+    with torch.no_grad():
+        for image in images:
+            features = target_model(preprocess(image).unsqueeze(0).to(device))
+    
+    for target_layer in target_layers:
+        all_features[target_layer] = torch.cat(all_features[target_layer])
+        hooks[target_layer].remove()
+    return all_features
+
+def get_clip_image_features(model, preprocess, images, batch_size=1000, device = "cuda"):
+    
+    all_features = []
+    with torch.no_grad():
+        for image in images:
+            features = model.encode_image(preprocess(image).unsqueeze(0).to(device))
+            all_features.append(features)
+    all_features = torch.cat(all_features)
+    return all_features
+    
+
 def get_clip_text_features(model, text, batch_size=1000):
     """
     gets text features without saving, useful with dynamic concept sets
     """
     text_features = []
     with torch.no_grad():
-        for i in tqdm(range(math.ceil(len(text)/batch_size))):
+        for i in range(math.ceil(len(text)/batch_size)):
             text_features.append(model.encode_text(text[batch_size*i:batch_size*(i+1)]))
     text_features = torch.cat(text_features, dim=0)
     return text_features
@@ -196,14 +226,10 @@ def save_new_activations(clip_name, target_name, target_layers, d_probe, new_ima
     return
     
 def get_similarity_from_activations(target_save_name, clip_save_name, text_save_name, similarity_fn, 
-                                   new_target_save_name = None, new_clip_save_name = None, return_target_feats=True, new_set=False, k = 100, device="cuda"):
+                                   new_target_save_name = None, new_clip_save_name = None, return_target_feats=True, k = 100, device="cuda"):
     
     image_features = torch.load(clip_save_name, map_location='cpu').float()
     text_features = torch.load(text_save_name, map_location='cpu').float()
-
-    if new_set == True:
-      new_image_features = torch.load(new_clip_save_name, map_location='cpu').float()
-      image_features = torch.cat((image_features, new_image_features), 0)
 
     with torch.no_grad():
         image_features /= image_features.norm(dim=-1, keepdim=True)
@@ -214,10 +240,6 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
     
     target_feats = torch.load(target_save_name, map_location='cpu')
 
-    if new_set == True:
-      new_target_feats = torch.load(new_target_save_name, map_location='cpu')
-      target_feats = torch.cat((target_feats,new_target_feats), 0)
-
     similarity = similarity_fn(clip_feats, target_feats, top_k=k, device=device)
     
     del clip_feats
@@ -227,6 +249,42 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
         return similarity, target_feats
     else:
         del target_feats
+        torch.cuda.empty_cache()
+        return similarity
+    
+def get_similarity_from_new_activations(clip_name, target_name, target_layers, image_set,
+                  concept_set, pool_mode, similarity_fn, return_target_feats=True, k = None, device="cuda"):
+    
+    clip_model, clip_preprocess = clip.load(clip_name, device=device)
+    target_model, target_preprocess = data_utils.get_target_model(target_name, device)
+    
+    text = clip.tokenize(["{}".format(word) for word in concept_set]).to(device)
+    
+    image_features = get_clip_image_features(clip_model, clip_preprocess, image_set).float()
+    text_features = get_clip_text_features(clip_model, text).float()
+
+    with torch.no_grad():
+        image_features /= image_features.norm(dim=-1, keepdim=True)
+        text_features /= text_features.norm(dim=-1, keepdim=True)
+        clip_feats = (image_features @ text_features.T)
+    del image_features, text_features
+    torch.cuda.empty_cache()
+    
+    target_feats = get_target_activations(target_model, target_preprocess, image_set, 
+                                          target_layers = target_layers, device = device, pool_mode=pool_mode)
+    
+    target_layer_feats = target_feats[target_layers[0]]
+    if k == None:
+        k = len(target_layer_feats)
+    similarity = similarity_fn(clip_feats, target_layer_feats, top_k=k, device=device)
+    
+    del clip_feats
+    torch.cuda.empty_cache()
+    
+    if return_target_feats:
+        return similarity, target_layer_feats
+    else:
+        del target_feats, target_layer_feats
         torch.cuda.empty_cache()
         return similarity
 
