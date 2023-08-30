@@ -119,8 +119,10 @@ def save_clip_text_features(model, text, save_name, batch_size=1000):
     torch.cuda.empty_cache()
     return
 
-def get_target_activations(target_model, preprocess, images, target_layers = ["layer4"], batch_size = 1000,
+def get_target_activations(target_name, images, target_layers = ["layer4"], batch_size = 1000,
                             device = "cuda", pool_mode='avg'):
+    
+    target_model, preprocess = data_utils.get_target_model(target_name, device)
     
     all_features = {target_layer:[] for target_layer in target_layers}
     
@@ -136,7 +138,7 @@ def get_target_activations(target_model, preprocess, images, target_layers = ["l
     for target_layer in target_layers:
         all_features[target_layer] = torch.cat(all_features[target_layer])
         hooks[target_layer].remove()
-    return all_features
+    return all_features[target_layers[0]]
 
 def get_clip_image_features(model, preprocess, images, batch_size=1000, device = "cuda"):
     
@@ -187,6 +189,7 @@ def save_activations(clip_name, target_name, target_layers, d_probe,
                             batch_size, device, pool_mode)
     return
 
+# delete this function on official code
 def save_new_activations(clip_name, target_name, target_layers, d_probe, new_images,
                      concept_set, batch_size, device, pool_mode, save_dir, wordList = []):
     
@@ -251,7 +254,8 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
         del target_feats
         torch.cuda.empty_cache()
         return similarity
-    
+
+#delete this function on official code
 def get_similarity_from_new_activations(clip_name, target_name, target_layers, image_set,
                   concept_set, pool_mode, similarity_fn, return_target_feats=True, k = None, device="cuda"):
     
