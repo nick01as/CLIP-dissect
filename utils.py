@@ -9,6 +9,7 @@ import data_utils
 from PIL import Image
 from torchvision import transforms
 from matplotlib import pyplot as plt
+import cv2
 
 PM_SUFFIX = {"max":"_max", "avg":""}
 
@@ -35,26 +36,15 @@ def get_activation(outputs, mode):
                 outputs.append(output.detach())
     return hook
 
-def get_image_crops(images, dim_x = 300, dim_y = 300):
-    width, height = images[0].size
-    dim_x = min(dim_x, width)
-    dim_y = min(dim_y, height)
-    
-    stride_x = dim_x / 3
-    stride_y = dim_y / 3
-    
-    cropped_images = {image_id : [] for image_id in range(len(images))}
-    for i, image in enumerate(images):
-        x_cor = 0
-        while x_cor + dim_x < width:
-            y_cor = 0
-            while y_cor + dim_y < height:
-                box = (x_cor, y_cor, x_cor + dim_x - 1, y_cor + dim_y - 1)
-                cropped_img = image.crop(box)
-                cropped_images[i].append(cropped_img)
-                y_cor += stride_y
-            x_cor += stride_x
-    return cropped_images
+def get_mean_activation(outputs):
+    def hook(model, input, output):
+        if len(output.shape)==4: #CNN layers
+            outputs.append(output.detach())
+        elif len(output.shape)==3: #ViT
+            outputs.append(output[:, 0].clone())
+        elif len(output.shape)==2: #FC layers
+            outputs.append(output.detach())
+    return hook
     
 def get_save_names(clip_name, target_name, target_layer, d_probe, concept_set, pool_mode, save_dir, newSet = False):
 
@@ -141,8 +131,55 @@ def save_clip_text_features(model, text, save_name, batch_size=1000):
     torch.cuda.empty_cache()
     return
 
-def get_target_activations(target_name, images, target_layers = ["layer4"], batch_size = 1000,
+def get_attention_crops(target_name, images, neuron_id, target_layers = ["layer4"], batch_size = 1000,
                             device = "cuda", pool_mode='avg', return_feature_crops = False):
+    
+    target_model, preprocess = data_utils.get_target_model(target_name, device)
+    all_features = {target_layer:[] for target_layer in target_layers}
+    hooks = {}
+    
+    transform = transforms.ToPILImage()
+    
+    for target_layer in target_layers:
+        command = "target_model.{}.register_forward_hook(get_mean_activation(all_features[target_layer]))".format(target_layer)
+        hooks[target_layer] = eval(command)
+        
+    with torch.no_grad():
+        for image in images:
+            features = target_model(preprocess(image).unsqueeze(0).to(device))
+    
+    all_heatmaps = {target_layer:[] for target_layer in target_layers}
+    for target_layer in target_layers:
+        all_features[target_layer] = torch.cat(all_features[target_layer])
+        print("Neuron {}: {}".format(neuron_id, all_features[target_layer].shape))
+        hooks[target_layer].remove()
+        
+        for i in range(len(all_features[target_layer])):
+            heatmap = transform(all_features[target_layer][i][neuron_id])
+            heatmap = heatmap.resize([375,375])
+            heatmap = np.array(heatmap)
+            all_heatmaps[target_layer].append(heatmap)
+    
+    all_image_crops = [];
+    for target_layer in target_layers:
+        for i, heatmap in enumerate(all_heatmaps[target_layer]): 
+            thresh = cv2.threshold(heatmap, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+
+            # Find contours
+            cnts = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+            for c in cnts:
+                x,y,w,h = cv2.boundingRect(c)
+                box = (x, y, x + w, y + h)
+                cropped_img = images[i].crop(box)
+                cropped_img = cropped_img.resize([375,375])
+                all_image_crops.append(cropped_img)
+                
+    return all_image_crops
+    
+
+def get_target_activations(target_name, images, target_layers = ["layer4"], batch_size = 1000,
+                            device = "cuda", pool_mode='avg'):
     
     target_model, preprocess = data_utils.get_target_model(target_name, device)
     
@@ -210,44 +247,6 @@ def save_activations(clip_name, target_name, target_layers, d_probe,
     save_target_activations(target_model, data_t, target_save_name, target_layers,
                             batch_size, device, pool_mode)
     return
-
-def save_new_activations(clip_name, target_name, target_layers, d_probe, new_images,
-                     concept_set, batch_size, device, pool_mode, save_dir, wordList = []):
-    
-    clip_model, clip_preprocess = clip.load(clip_name, device=device)
-    target_model, target_preprocess = data_utils.get_target_model(target_name, device)
-
-    tmp_class_c = data_utils.get_data(d_probe, clip_preprocess)
-    tmp_class_c.data = np.empty([0,32,32,3], dtype = np.uint8)
-    tmp_class_c.targets = []
-    data_c = tmp_class_c
-
-    tmp_class_t = data_utils.get_data(d_probe, target_preprocess)
-    tmp_class_t.data = np.empty([0,32,32,3], dtype = np.uint8)
-    tmp_class_t.targets = []
-    data_t = tmp_class_t
-    
-    text = clip.tokenize(["{}".format(word) for word in wordList]).to(device)
-
-    for idx in new_images:
-        img_array = np.array(new_images[idx])
-        
-        data_c.data = np.append(data_c.data, [img_array], axis = 0)
-        data_c.targets.append(-1)
-
-        data_t.data = np.append(data_t.data, [img_array], axis = 0)
-        data_t.targets.append(-1)
-
-    save_names = get_save_names(clip_name = clip_name, target_name = target_name,
-                                target_layer = '{}', d_probe = d_probe, concept_set = concept_set,
-                                pool_mode=pool_mode, save_dir = save_dir, newSet = True)
-    target_save_name, clip_save_name, text_save_name = save_names
-
-    save_clip_text_features(clip_model, text, text_save_name, batch_size)
-    save_clip_image_features(clip_model, data_c, clip_save_name, batch_size, device)
-    save_target_activations(target_model, data_t, target_save_name, target_layers,
-                            batch_size, device, pool_mode)
-    return
     
 def get_similarity_from_activations(target_save_name, clip_save_name, text_save_name, similarity_fn, 
                                    new_target_save_name = None, new_clip_save_name = None, return_target_feats=True, k = 100, device="cuda"):
@@ -275,42 +274,6 @@ def get_similarity_from_activations(target_save_name, clip_save_name, text_save_
         del target_feats
         torch.cuda.empty_cache()
         return similarity
-    
-# def get_similarity_from_new_activations(clip_name, target_name, target_layers, image_set,
-#                   concept_set, pool_mode, similarity_fn, return_target_feats=True, k = None, device="cuda"):
-    
-#     clip_model, clip_preprocess = clip.load(clip_name, device=device)
-#     target_model, target_preprocess = data_utils.get_target_model(target_name, device)
-    
-#     text = clip.tokenize(["{}".format(word) for word in concept_set]).to(device)
-    
-#     image_features = get_clip_image_features(clip_model, clip_preprocess, image_set).float()
-#     text_features = get_clip_text_features(clip_model, text).float()
-
-#     with torch.no_grad():
-#         image_features /= image_features.norm(dim=-1, keepdim=True)
-#         text_features /= text_features.norm(dim=-1, keepdim=True)
-#         clip_feats = (image_features @ text_features.T)
-#     del image_features, text_features
-#     torch.cuda.empty_cache()
-    
-#     target_feats = get_target_activations(target_model, target_preprocess, image_set, 
-#                                           target_layers = target_layers, device = device, pool_mode=pool_mode)
-    
-#     target_layer_feats = target_feats[target_layers[0]]
-#     if k == None:
-#         k = len(target_layer_feats)
-#     similarity = similarity_fn(clip_feats, target_layer_feats, top_k=k, device=device)
-    
-#     del clip_feats
-#     torch.cuda.empty_cache()
-    
-#     if return_target_feats:
-#         return similarity, target_layer_feats
-#     else:
-#         del target_feats, target_layer_feats
-#         torch.cuda.empty_cache()
-#         return similarity
 
 def get_cos_similarity(preds, gt, clip_model, mpnet_model, device="cuda", batch_size=200):
     """
