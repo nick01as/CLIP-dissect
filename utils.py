@@ -10,6 +10,7 @@ from PIL import Image
 from torchvision import transforms
 from matplotlib import pyplot as plt
 import cv2
+import functools 
 
 PM_SUFFIX = {"max":"_max", "avg":""}
 
@@ -131,8 +132,37 @@ def save_clip_text_features(model, text, save_name, batch_size=1000):
     torch.cuda.empty_cache()
     return
 
-def get_attention_crops(target_name, images, neuron_id, target_layers = ["layer4"], batch_size = 1000,
-                            device = "cuda", pool_mode='avg', return_feature_crops = False):
+def IoU(box, check_box):
+    x1,y1,x2,y2 = box;
+    
+    box_area = abs(x2-x1) * abs(y2-y1)
+    
+    cx1, cy1, cx2, cy2 = check_box
+    check_area = abs(cx2-cx1) * abs(cy2-cy1)
+
+    overlap_x = max(0,min(cx2, x2) - max(cx1, x1))
+    overlap_y = max(0,min(cy2, y2) - max(cy1, y1))
+
+    overlap = overlap_x * overlap_y
+    union = box_area + check_area - overlap
+    
+    return overlap / union
+        
+def compare(box1, box2):
+    x1,y1,x2,y2 = box1;
+    box1_area = abs(x2-x1) * abs(y2-y1)
+    cx1, cy1, cx2, cy2 = box2
+    box2_area = abs(cx2-cx1) * abs(cy2-cy1)
+    
+    if box1_area < box2_area:
+        return 1
+    elif box1_area > box2_area:
+        return -1
+    else:
+        return 0
+
+def get_attention_crops(target_name, images, neuron_id, num_crops_per_image = 4, target_layers = ["layer4"], batch_size = 1000,
+                            device = "cuda", pool_mode='avg'):
     
     target_model, preprocess = data_utils.get_target_model(target_name, device)
     all_features = {target_layer:[] for target_layer in target_layers}
@@ -164,16 +194,35 @@ def get_attention_crops(target_name, images, neuron_id, target_layers = ["layer4
     for target_layer in target_layers:
         for i, heatmap in enumerate(all_heatmaps[target_layer]): 
             thresh = cv2.threshold(heatmap, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-
+            
+            bb_cor = []
             # Find contours
             cnts = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cnts = cnts[0] if len(cnts) == 2 else cnts[1]
             for c in cnts:
                 x,y,w,h = cv2.boundingRect(c)
                 box = (x, y, x + w, y + h)
-                cropped_img = images[i].crop(box)
-                cropped_img = cropped_img.resize([375,375])
-                all_image_crops.append(cropped_img)
+                bb_cor.append(box)
+                
+            bb_cor = sorted(bb_cor, key=functools.cmp_to_key(compare))
+            
+            cropped_bb = []
+            for box in bb_cor:
+                if len(cropped_bb) == num_crops_per_image:
+                    break
+                p = 0
+                good_to_add = True
+                while p < len(cropped_bb):
+                    if IoU(box, cropped_bb[p]) <= 0.5: 
+                        p += 1
+                    else:
+                        good_to_add = False
+                        break
+                if good_to_add and IoU(box,(0,0,375,375)) < 0.8:
+                    cropped_img = images[i].crop(box)
+                    cropped_img = cropped_img.resize([375,375])
+                    all_image_crops.append(cropped_img)
+                    cropped_bb.append(box)
                 
     return all_image_crops
     
