@@ -6,7 +6,7 @@ import clip
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 import data_utils
-from PIL import Image
+from PIL import Image, ImageOps
 from torchvision import transforms
 from matplotlib import pyplot as plt
 import cv2
@@ -162,7 +162,7 @@ def compare(box1, box2):
         return 0
 
 def get_attention_crops(target_name, images, neuron_id, num_crops_per_image = 4, target_layers = ["layer4"], batch_size = 1000,
-                            device = "cuda", pool_mode='avg'):
+                            device = "cuda", pool_mode='avg', return_bounding_box = False):
     
     target_model, preprocess = data_utils.get_target_model(target_name, device)
     all_features = {target_layer:[] for target_layer in target_layers}
@@ -181,16 +181,25 @@ def get_attention_crops(target_name, images, neuron_id, num_crops_per_image = 4,
     all_heatmaps = {target_layer:[] for target_layer in target_layers}
     for target_layer in target_layers:
         all_features[target_layer] = torch.cat(all_features[target_layer])
-        print("Neuron {}: {}".format(neuron_id, all_features[target_layer].shape))
         hooks[target_layer].remove()
         
         for i in range(len(all_features[target_layer])):
-            heatmap = transform(all_features[target_layer][i][neuron_id])
+            if target_layer != 'fc' and target_layer != 'encoder':
+                print(all_features[target_layer].shape)
+                heatmap = transform(all_features[target_layer][i][neuron_id])
+            elif target_layer == 'encoder':
+                unflattend_img = torch.unflatten(all_features[target_layer][i],0,(16,16,3))
+                unflattend_img = torch.permute(unflattend_img, (2,0,1))
+                heatmap = ImageOps.grayscale(transform(unflattend_img))
+            else:
+                heatmap = transform(all_features[target_layer][i])
             heatmap = heatmap.resize([375,375])
             heatmap = np.array(heatmap)
+            # print("Heat map shape: {}".format(heatmap.shape))
             all_heatmaps[target_layer].append(heatmap)
     
     all_image_crops = [];
+    all_bb_box = {layer : {i:[] for i in range(len(all_heatmaps[target_layer]))} for layer in target_layers}
     for target_layer in target_layers:
         for i, heatmap in enumerate(all_heatmaps[target_layer]): 
             thresh = cv2.threshold(heatmap, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
@@ -223,9 +232,14 @@ def get_attention_crops(target_name, images, neuron_id, num_crops_per_image = 4,
                     cropped_img = cropped_img.resize([375,375])
                     all_image_crops.append(cropped_img)
                     cropped_bb.append(box)
-                
-    return all_image_crops
-    
+            all_bb_box[target_layer][i] = cropped_bb
+            
+    if return_bounding_box == True:
+        return all_bb_box[target_layers[0]], all_image_crops
+    else:
+        del all_bb_box
+        return all_image_crops
+       
 
 def get_target_activations(target_name, images, target_layers = ["layer4"], batch_size = 1000,
                             device = "cuda", pool_mode='avg'):
